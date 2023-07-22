@@ -1,0 +1,36 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Employees {
+  id                String       @id @unique @default(cuid())
+  name              String?      @unique
+  pwd               String?
+  email             String?      @unique
+  job_title         String?
+  salary            Int?
+  departement       String?
+  joined_date       DateTime?
+  verification_code Int?         @unique
+  refresh_token     String?
+  reset_token       String?
+  is_admin          Boolean      @default(false)
+  is_verified       Boolean      @default(false)
+  created_at        DateTime     @default(now())
+  updated_at        DateTime     @default(now()) @updatedAt
+  Sales_data        Sales_data[]
+}
+
+model Sales_data {
+  id          String    @id @unique @default(cuid())
+  employee    Employees @relation(fields: [employee_id], references: [id])
+  employee_id String
+  sales       Int
+  created_at  DateTime  @default(now())
+  updated_at  DateTime  @default(now()) @updatedAt
+}
