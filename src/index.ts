@@ -28,6 +28,7 @@ app.use(express.urlencoded({ extended: false }));
 app.use(middleware.logRequest);
 
 app.use("/auth", require("./routes/auth"));
+app.use("/employee", require("./routes/employees"));
 
 app.listen(3001, () =>
   console.log("REST API server ready at: http://localhost:3001")

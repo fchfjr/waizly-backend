@@ -1,4 +1,4 @@
-// only "GET" query, so it dont mess with "DRY METHOD"
+// only "GET" query, in order follow "DRY METHOD" rule
 
 import { PrismaClient, Employees } from "@prisma/client";
 const prisma = new PrismaClient();

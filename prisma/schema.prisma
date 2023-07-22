@@ -9,7 +9,7 @@ datasource db {
 
 model Employees {
   id                String       @id @unique @default(cuid())
-  name              String?      @unique
+  name              String?
   pwd               String?
   email             String?      @unique
   job_title         String?

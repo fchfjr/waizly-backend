@@ -35,6 +35,7 @@ const validateToken = (req: Request, res: Response, next: NextFunction) => {
   }
 };
 
+
 const registerValidator = (req: Request, res: Response, next: NextFunction) => {
   extend("pwdValidate", () => {
     if (
