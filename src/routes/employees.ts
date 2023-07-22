@@ -18,6 +18,8 @@ router.patch(
   controller?.editEmployee
 );
 
+router.get("/", validateToken, controller?.getEmployee);
+
 router.delete("/delete/:id", validateToken, controller?.deleteEmployee);
 
 module.exports = router;

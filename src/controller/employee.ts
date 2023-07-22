@@ -83,6 +83,12 @@ const editEmployee = async (req: Request, res: Response) => {
       where: { id },
     });
 
+    if (!getData) {
+      return res.status(422).json({
+        message: `ID not valid`,
+      });
+    }
+
     if (email) {
       const isEmailExist = await validateEmail({ email });
       if (isEmailExist) {
@@ -123,15 +129,76 @@ const editEmployee = async (req: Request, res: Response) => {
   }
 };
 
-const deleteEmployee = async (req: Request, res: Response) => {
+const getEmployee = async (req: Request, res: Response) => {
   try {
-    const {id} = req.params
+    const { totalEmployee, nameSalary }: any = req.query;
 
-    
+    let getData;
+    if (!Object.keys(req.query).length) {
+      getData = await prisma.employees.findMany({
+        where: {
+          is_admin: false,
+        },
+        select: {
+          id: true,
+          email: true,
+          name: true,
+          job_title: true,
+          salary: true,
+          departement: true,
+          joined_date: true,
+        },
+      });
+      res.status(200).json({
+        total: getData?.length,
+        data: getData,
+      });
+    } else {
+      if (totalEmployee) {
+        getData = await prisma.employees.findMany({
+          where: {
+            is_admin: false,
+            job_title: { contains: totalEmployee, mode: "insensitive" },
+          },
+        });
+        res.status(200).json({
+          total: getData?.length,
+        });
+      } else if (nameSalary) {
+        const splitted = nameSalary.split(",");
+        getData = await prisma.employees.findMany({
+          where: {
+            is_admin: false,
+            departement: {
+              in: splitted, // Use 'in' operator with the 'splitted' array
+              mode: "insensitive",
+            },
+          },
+          select: {
+            name: true,
+            salary: true,
+          },
+        });
+
+        res.status(200).json({
+          total: getData?.length,
+          data: getData,
+        });
+      }
+    }
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Internal server error" });
   }
 };
 
-module.exports = { addEmployee, editEmployee, deleteEmployee };
+const deleteEmployee = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+module.exports = { addEmployee, editEmployee, getEmployee, deleteEmployee };
