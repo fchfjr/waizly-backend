@@ -12,7 +12,7 @@ router.post(
 );
 
 router.patch(
-  "/edit/:id",
+  "/edit",
   validateToken,
   middleware?.editEmployeeValidator,
   controller?.editEmployee

@@ -29,6 +29,7 @@ app.use(middleware.logRequest);
 
 app.use("/auth", require("./routes/auth"));
 app.use("/employee", require("./routes/employees"));
+app.use("/salesData", require("./routes/salesData"));
 
 app.listen(3001, () =>
   console.log("REST API server ready at: http://localhost:3001")

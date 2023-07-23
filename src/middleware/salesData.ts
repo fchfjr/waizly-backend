@@ -1,18 +1,10 @@
 import { Request, Response, NextFunction } from "express";
 const { Validator } = require("node-input-validator");
 
-const addEmployeeValidator = (
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => {
+const addSalesValidator = (req: Request, res: Response, next: NextFunction) => {
   const rules = new Validator(req.body, {
-    email: "required|email",
-    name: "required|string",
-    job_title: "required|string",
-    salary: "required|integer",
-    departement: "required|string",
-    joined_date: "required",
+    employee_id: "required",
+    sales: "required|integer",
   });
 
   rules.check().then((matched: boolean) => {
@@ -27,19 +19,14 @@ const addEmployeeValidator = (
   });
 };
 
-const editEmployeeValidator = (
+const editSalesValidator = (
   req: Request,
   res: Response,
   next: NextFunction
 ) => {
   const rules = new Validator(req.body, {
     id: "required",
-    email: "email",
-    name: "string",
-    job_title: "string",
-    salary: "integer",
-    departement: "string",
-    joined_date: "string",
+    sales: "required|integer",
   });
 
   rules.check().then((matched: boolean) => {
@@ -54,7 +41,4 @@ const editEmployeeValidator = (
   });
 };
 
-module.exports = {
-  addEmployeeValidator,
-  editEmployeeValidator,
-};
+module.exports = { addSalesValidator, editSalesValidator };
