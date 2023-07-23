@@ -150,8 +150,34 @@ const editEmployee = async (req: Request, res: Response) => {
 };
 
 const getEmployee = async (req: Request, res: Response) => {
+  interface EmployeeWithAvgSalary {
+    name: string;
+    salary: number;
+    departement: string;
+    avgSalary: number;
+  }
+
+  interface EmployeeSalesRanking {
+    id: string;
+    name: string;
+    job_title: string;
+    departement: string;
+    joined_date: Date;
+    total: number;
+    totalqty: number;
+    rank: number;
+  }
+
   try {
-    const { totalEmployee, nameSalary, avgSalary }: any = req.query;
+    const {
+      totalEmployee,
+      employeeSalary,
+      avgSalary,
+      topFiveSales,
+      highSalaryDepartements,
+      employeeSalesRank,
+      totalEmployeeSalary,
+    }: any = req.query;
 
     let getData;
     if (!Object.keys(req.query).length) {
@@ -184,8 +210,8 @@ const getEmployee = async (req: Request, res: Response) => {
         res.status(200).json({
           total: getData?.length,
         });
-      } else if (nameSalary) {
-        const splitted = nameSalary.split(",");
+      } else if (employeeSalary) {
+        const splitted = employeeSalary.split(",");
         getData = await prisma.employees.findMany({
           where: {
             is_admin: false,
@@ -197,6 +223,8 @@ const getEmployee = async (req: Request, res: Response) => {
           select: {
             name: true,
             salary: true,
+            job_title: true,
+            departement: true,
           },
         });
 
@@ -233,6 +261,114 @@ const getEmployee = async (req: Request, res: Response) => {
         res.status(200).json({
           totalEmployees: numberOfEmployees,
           avgSalary: averageSalary,
+        });
+      } else if (topFiveSales) {
+        const topFive: [{}] = await prisma.$queryRaw`
+        SELECT e.id, e.name, e.job_title, e.salary, e.departement, e.joined_date, SUM(s.sales) as total
+        FROM "Employees" e
+        JOIN "Sales_data" s ON e.id = s.employee_id
+        WHERE e.is_admin = false
+        GROUP BY e.id
+        ORDER BY total DESC
+        LIMIT 5`;
+
+        const topFiveFormatted = topFive.map((item: any) => ({
+          ...item,
+          total: Number(item.total),
+        }));
+
+        res.status(200).json(topFiveFormatted);
+      } else if (highSalaryDepartements) {
+        const overallAverageSalaryQuery: any = await prisma.$queryRaw`
+        SELECT AVG(salary) as averageSalary
+        FROM "Employees"
+      `;
+        const overallAverageSalary =
+          overallAverageSalaryQuery[0]?.averageSalary || 0;
+
+        const highestAverageSalaryQuery: any = await prisma.$queryRaw`
+        SELECT departement, AVG(salary) as averageSalary
+        FROM "Employees"
+        GROUP BY departement
+        HAVING AVG(salary) >= ${overallAverageSalary}
+        ORDER BY averageSalary DESC
+        LIMIT 1
+      `;
+
+        const highestSalaryDepartment =
+          highestAverageSalaryQuery[0]?.departement;
+
+        if (!highestSalaryDepartment) {
+          res
+            .status(404)
+            .json({ message: "Highest salary department not found" });
+          return;
+        }
+
+        const employeesInHighestSalaryDept: EmployeeWithAvgSalary[] =
+          await prisma.$queryRaw`
+           SELECT name, salary, departement,
+          (SELECT AVG(salary) FROM "Employees" WHERE departement = ${highestSalaryDepartment}) as avgSalary
+          FROM "Employees"
+          WHERE is_admin = false AND departement = ${highestSalaryDepartment}
+        `;
+
+        res.status(200).json(employeesInHighestSalaryDept);
+      } else if (employeeSalesRank) {
+        const topEmployee: EmployeeSalesRanking[] = await prisma.$queryRaw`
+        SELECT e.id, e.name, e.job_title, e.departement, e.joined_date, 
+        SUM(s.sales) as total, COUNT(s.id) as totalqty,
+        RANK() OVER (ORDER BY SUM(s.sales) DESC) as rank
+        FROM "Employees" e
+        JOIN "Sales_data" s ON e.id = s.employee_id
+        WHERE e.is_admin = false
+        GROUP BY e.id
+        ORDER BY total DESC
+      `;
+
+        const topEmployeeFormatted = topEmployee.map((item) => ({
+          ...item,
+          total: Number(item.total),
+          totalqty: Number(item.totalqty),
+          rank: Number(item.rank),
+        }));
+        res.status(200).json(topEmployeeFormatted);
+      } else if (totalEmployeeSalary) {
+        if (totalEmployeeSalary.split(",").length > 1) {
+          return res.status(422).json({
+            message: `Only accept 1 departement at a time`,
+          });
+        }
+
+        const splitted = totalEmployeeSalary.split(",");
+        getData = await prisma.employees.findMany({
+          where: {
+            is_admin: false,
+            departement: {
+              in: splitted,
+              mode: "insensitive",
+            },
+          },
+          select: {
+            name: true,
+            salary: true,
+            job_title: true,
+            departement: true,
+            joined_date: true,
+          },
+        });
+
+        let totalSalary = 0;
+        if (getData !== null) {
+          for (let i = 0; i < getData.length; i++) {
+            totalSalary += getData[i]?.salary || 0;
+          }
+        }
+
+        res.status(200).json({
+          totalEmployee: getData?.length,
+          totalSalary,
+          data: getData,
         });
       }
     }
